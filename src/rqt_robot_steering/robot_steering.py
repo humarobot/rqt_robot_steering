@@ -33,6 +33,8 @@ import os
 import rospkg
 
 from geometry_msgs.msg import Twist
+from geometry_msgs.msg import PoseStamped
+from tf.transformations import quaternion_from_euler
 import rospy
 from python_qt_binding import loadUi
 from python_qt_binding.QtCore import Qt, QTimer, Slot
@@ -66,113 +68,24 @@ class RobotSteering(Plugin):
             self._on_topic_changed)
         self._widget.stop_push_button.pressed.connect(self._on_stop_pressed)
 
-        self._widget.x_linear_slider.valueChanged.connect(
-            self._on_x_linear_slider_changed)
-        self._widget.z_angular_slider.valueChanged.connect(
-            self._on_z_angular_slider_changed)
-
-        self._widget.increase_x_linear_push_button.pressed.connect(
-            self._on_strong_increase_x_linear_pressed)
-        self._widget.reset_x_linear_push_button.pressed.connect(
-            self._on_reset_x_linear_pressed)
-        self._widget.decrease_x_linear_push_button.pressed.connect(
-            self._on_strong_decrease_x_linear_pressed)
-        self._widget.increase_z_angular_push_button.pressed.connect(
-            self._on_strong_increase_z_angular_pressed)
-        self._widget.reset_z_angular_push_button.pressed.connect(
-            self._on_reset_z_angular_pressed)
-        self._widget.decrease_z_angular_push_button.pressed.connect(
-            self._on_strong_decrease_z_angular_pressed)
-
-        self._widget.max_x_linear_double_spin_box.valueChanged.connect(
-            self._on_max_x_linear_changed)
-        self._widget.min_x_linear_double_spin_box.valueChanged.connect(
-            self._on_min_x_linear_changed)
-        self._widget.max_z_angular_double_spin_box.valueChanged.connect(
-            self._on_max_z_angular_changed)
-        self._widget.min_z_angular_double_spin_box.valueChanged.connect(
-            self._on_min_z_angular_changed)
-
-        self.shortcut_w = QShortcut(QKeySequence(Qt.Key_W), self._widget)
-        self.shortcut_w.setContext(Qt.ApplicationShortcut)
-        self.shortcut_w.activated.connect(self._on_increase_x_linear_pressed)
-        self.shortcut_x = QShortcut(QKeySequence(Qt.Key_X), self._widget)
-        self.shortcut_x.setContext(Qt.ApplicationShortcut)
-        self.shortcut_x.activated.connect(self._on_reset_x_linear_pressed)
-        self.shortcut_s = QShortcut(QKeySequence(Qt.Key_S), self._widget)
-        self.shortcut_s.setContext(Qt.ApplicationShortcut)
-        self.shortcut_s.activated.connect(self._on_decrease_x_linear_pressed)
-        self.shortcut_a = QShortcut(QKeySequence(Qt.Key_A), self._widget)
-        self.shortcut_a.setContext(Qt.ApplicationShortcut)
-        self.shortcut_a.activated.connect(self._on_increase_z_angular_pressed)
-        self.shortcut_z = QShortcut(QKeySequence(Qt.Key_Z), self._widget)
-        self.shortcut_z.setContext(Qt.ApplicationShortcut)
-        self.shortcut_z.activated.connect(self._on_reset_z_angular_pressed)
-        self.shortcut_d = QShortcut(QKeySequence(Qt.Key_D), self._widget)
-        self.shortcut_d.setContext(Qt.ApplicationShortcut)
-        self.shortcut_d.activated.connect(self._on_decrease_z_angular_pressed)
-
-        self.shortcut_shift_w = QShortcut(
-            QKeySequence(Qt.SHIFT + Qt.Key_W), self._widget)
-        self.shortcut_shift_w.setContext(Qt.ApplicationShortcut)
-        self.shortcut_shift_w.activated.connect(
-            self._on_strong_increase_x_linear_pressed)
-        self.shortcut_shift_x = QShortcut(
-            QKeySequence(Qt.SHIFT + Qt.Key_X), self._widget)
-        self.shortcut_shift_x.setContext(Qt.ApplicationShortcut)
-        self.shortcut_shift_x.activated.connect(
-            self._on_reset_x_linear_pressed)
-        self.shortcut_shift_s = QShortcut(
-            QKeySequence(Qt.SHIFT + Qt.Key_S), self._widget)
-        self.shortcut_shift_s.setContext(Qt.ApplicationShortcut)
-        self.shortcut_shift_s.activated.connect(
-            self._on_strong_decrease_x_linear_pressed)
-        self.shortcut_shift_a = QShortcut(
-            QKeySequence(Qt.SHIFT + Qt.Key_A), self._widget)
-        self.shortcut_shift_a.setContext(Qt.ApplicationShortcut)
-        self.shortcut_shift_a.activated.connect(
-            self._on_strong_increase_z_angular_pressed)
-        self.shortcut_shift_z = QShortcut(
-            QKeySequence(Qt.SHIFT + Qt.Key_Z), self._widget)
-        self.shortcut_shift_z.setContext(Qt.ApplicationShortcut)
-        self.shortcut_shift_z.activated.connect(
-            self._on_reset_z_angular_pressed)
-        self.shortcut_shift_d = QShortcut(
-            QKeySequence(Qt.SHIFT + Qt.Key_D), self._widget)
-        self.shortcut_shift_d.setContext(Qt.ApplicationShortcut)
-        self.shortcut_shift_d.activated.connect(
-            self._on_strong_decrease_z_angular_pressed)
-
-        self.shortcut_space = QShortcut(
-            QKeySequence(Qt.Key_Space), self._widget)
-        self.shortcut_space.setContext(Qt.ApplicationShortcut)
-        self.shortcut_space.activated.connect(self._on_stop_pressed)
-        self.shortcut_space = QShortcut(
-            QKeySequence(Qt.SHIFT + Qt.Key_Space), self._widget)
-        self.shortcut_space.setContext(Qt.ApplicationShortcut)
-        self.shortcut_space.activated.connect(self._on_stop_pressed)
-
-        self._widget.stop_push_button.setToolTip(
-            self._widget.stop_push_button.toolTip() + ' ' + self.tr('([Shift +] Space)'))
-        self._widget.increase_x_linear_push_button.setToolTip(
-            self._widget.increase_x_linear_push_button.toolTip() + ' ' + self.tr('([Shift +] W)'))
-        self._widget.reset_x_linear_push_button.setToolTip(
-            self._widget.reset_x_linear_push_button.toolTip() + ' ' + self.tr('([Shift +] X)'))
-        self._widget.decrease_x_linear_push_button.setToolTip(
-            self._widget.decrease_x_linear_push_button.toolTip() + ' ' + self.tr('([Shift +] S)'))
-        self._widget.increase_z_angular_push_button.setToolTip(
-            self._widget.increase_z_angular_push_button.toolTip() + ' ' + self.tr('([Shift +] A)'))
-        self._widget.reset_z_angular_push_button.setToolTip(
-            self._widget.reset_z_angular_push_button.toolTip() + ' ' + self.tr('([Shift +] Z)'))
-        self._widget.decrease_z_angular_push_button.setToolTip(
-            self._widget.decrease_z_angular_push_button.toolTip() + ' ' + self.tr('([Shift +] D)'))
+        self._widget.x_slider.valueChanged.connect(
+            self._on_x_slider_changed)
+        self._widget.y_slider.valueChanged.connect(
+            self._on_y_slider_changed)
+        self._widget.z_slider.valueChanged.connect(
+            self._on_z_slider_changed)
+        self._widget.roll_slider.valueChanged.connect(
+            self._on_roll_slider_changed)
+        self._widget.pitch_slider.valueChanged.connect(
+            self._on_pitch_slider_changed)
+        self._widget.yaw_slider.valueChanged.connect(
+            self._on_yaw_slider_changed)
 
         # timer to consecutively send twist messages
         self._update_parameter_timer = QTimer(self)
         self._update_parameter_timer.timeout.connect(
             self._on_parameter_changed)
         self._update_parameter_timer.start(100)
-        self.zero_cmd_sent = False
 
     @Slot(str)
     def _on_topic_changed(self, topic):
@@ -181,108 +94,65 @@ class RobotSteering(Plugin):
         if topic == '':
             return
         try:
-            self._publisher = rospy.Publisher(topic, Twist, queue_size=10)
+            self._publisher = rospy.Publisher(
+                topic, PoseStamped, queue_size=10)
         except TypeError:
-            self._publisher = rospy.Publisher(topic, Twist)
+            self._publisher = rospy.Publisher(topic, PoseStamped)
 
     def _on_stop_pressed(self):
+        # TODO: set default value here.
         # If the current value of sliders is zero directly send stop twist msg
-        if self._widget.x_linear_slider.value() == 0 and \
-                self._widget.z_angular_slider.value() == 0:
+        if self._widget.z_angular_slider.value() == 0:
             self.zero_cmd_sent = False
             self._on_parameter_changed()
         else:
-            self._widget.x_linear_slider.setValue(0)
             self._widget.z_angular_slider.setValue(0)
 
-    def _on_x_linear_slider_changed(self):
-        self._widget.current_x_linear_label.setText(
-            '%0.2f m/s' % (self._widget.x_linear_slider.value() / RobotSteering.slider_factor))
+    def _on_x_slider_changed(self):
+        # self._widget.current_joint_1_angular_label.setText(
+        #     '%0.2f rad/s' % (self._widget.z_angular_slider.value() / RobotSteering.slider_factor))
         self._on_parameter_changed()
 
-    def _on_z_angular_slider_changed(self):
-        self._widget.current_z_angular_label.setText(
-            '%0.2f rad/s' % (self._widget.z_angular_slider.value() / RobotSteering.slider_factor))
+    def _on_y_slider_changed(self):
         self._on_parameter_changed()
 
-    def _on_increase_x_linear_pressed(self):
-        self._widget.x_linear_slider.setValue(
-            self._widget.x_linear_slider.value() + self._widget.x_linear_slider.singleStep())
+    def _on_z_slider_changed(self):
+        self._on_parameter_changed()
 
-    def _on_reset_x_linear_pressed(self):
-        self._widget.x_linear_slider.setValue(0)
+    def _on_roll_slider_changed(self):
+        self._on_parameter_changed()
 
-    def _on_decrease_x_linear_pressed(self):
-        self._widget.x_linear_slider.setValue(
-            self._widget.x_linear_slider.value() - self._widget.x_linear_slider.singleStep())
+    def _on_pitch_slider_changed(self):
+        self._on_parameter_changed()
 
-    def _on_increase_z_angular_pressed(self):
-        self._widget.z_angular_slider.setValue(
-            self._widget.z_angular_slider.value() + self._widget.z_angular_slider.singleStep())
-
-    def _on_reset_z_angular_pressed(self):
-        self._widget.z_angular_slider.setValue(0)
-
-    def _on_decrease_z_angular_pressed(self):
-        self._widget.z_angular_slider.setValue(
-            self._widget.z_angular_slider.value() - self._widget.z_angular_slider.singleStep())
-
-    def _on_max_x_linear_changed(self, value):
-        self._widget.x_linear_slider.setMaximum(
-            value * RobotSteering.slider_factor)
-
-    def _on_min_x_linear_changed(self, value):
-        self._widget.x_linear_slider.setMinimum(
-            value * RobotSteering.slider_factor)
-
-    def _on_max_z_angular_changed(self, value):
-        self._widget.z_angular_slider.setMaximum(
-            value * RobotSteering.slider_factor)
-
-    def _on_min_z_angular_changed(self, value):
-        self._widget.z_angular_slider.setMinimum(
-            value * RobotSteering.slider_factor)
-
-    def _on_strong_increase_x_linear_pressed(self):
-        self._widget.x_linear_slider.setValue(
-            self._widget.x_linear_slider.value() + self._widget.x_linear_slider.pageStep())
-
-    def _on_strong_decrease_x_linear_pressed(self):
-        self._widget.x_linear_slider.setValue(
-            self._widget.x_linear_slider.value() - self._widget.x_linear_slider.pageStep())
-
-    def _on_strong_increase_z_angular_pressed(self):
-        self._widget.z_angular_slider.setValue(
-            self._widget.z_angular_slider.value() + self._widget.z_angular_slider.pageStep())
-
-    def _on_strong_decrease_z_angular_pressed(self):
-        self._widget.z_angular_slider.setValue(
-            self._widget.z_angular_slider.value() - self._widget.z_angular_slider.pageStep())
+    def _on_yaw_slider_changed(self):
+        self._on_parameter_changed()
 
     def _on_parameter_changed(self):
-        self._send_twist(
-            self._widget.x_linear_slider.value() / RobotSteering.slider_factor,
-            self._widget.z_angular_slider.value() / RobotSteering.slider_factor)
+        x = self._widget.x_slider.value() / RobotSteering.slider_factor
+        y = self._widget.y_slider.value() / RobotSteering.slider_factor
+        z = self._widget.z_slider.value() / RobotSteering.slider_factor
+        roll = self._widget.roll_slider.value() / RobotSteering.slider_factor
+        pitch = self._widget.pitch_slider.value() / RobotSteering.slider_factor
+        yaw = self._widget.yaw_slider.value() / RobotSteering.slider_factor
+        self._send_posestamped(x, y, z, roll, pitch, yaw)
 
-    def _send_twist(self, x_linear, z_angular):
+    def _send_posestamped(self, x, y, z, roll, pitch, yaw):
         if self._publisher is None:
             return
-        twist = Twist()
-        twist.linear.x = x_linear
-        twist.linear.y = 0
-        twist.linear.z = 0
-        twist.angular.x = 0
-        twist.angular.y = 0
-        twist.angular.z = z_angular
+        msg = PoseStamped()
+        msg.header.frame_id = "odom"
+        msg.pose.position.x = x
+        msg.pose.position.y = y
+        msg.pose.position.z = z
 
-        # Only send the zero command once so other devices can take control
-        if x_linear == 0 and z_angular == 0:
-            if not self.zero_cmd_sent:
-                self.zero_cmd_sent = True
-                self._publisher.publish(twist)
-        else:
-            self.zero_cmd_sent = False
-            self._publisher.publish(twist)
+        q = quaternion_from_euler(roll, pitch, yaw)
+        msg.pose.orientation.x = q[0]
+        msg.pose.orientation.y = q[1]
+        msg.pose.orientation.z = q[2]
+        msg.pose.orientation.w = q[3]
+
+        self._publisher.publish(msg)
 
     def _unregister_publisher(self):
         if self._publisher is not None:
@@ -296,36 +166,8 @@ class RobotSteering(Plugin):
     def save_settings(self, plugin_settings, instance_settings):
         instance_settings.set_value(
             'topic', self._widget.topic_line_edit.text())
-        instance_settings.set_value(
-            'vx_max', self._widget.max_x_linear_double_spin_box.value())
-        instance_settings.set_value(
-            'vx_min', self._widget.min_x_linear_double_spin_box.value())
-        instance_settings.set_value(
-            'vw_max', self._widget.max_z_angular_double_spin_box.value())
-        instance_settings.set_value(
-            'vw_min', self._widget.min_z_angular_double_spin_box.value())
 
     def restore_settings(self, plugin_settings, instance_settings):
-        value = instance_settings.value('topic', '/cmd_vel')
-        value = rospy.get_param('~default_topic', value)
+        value = instance_settings.value('topic', '/legged_robot_EE_pose')
+        # value = rospy.get_param('~default_topic', value)
         self._widget.topic_line_edit.setText(value)
-
-        value = self._widget.max_x_linear_double_spin_box.value()
-        value = instance_settings.value('vx_max', value)
-        value = rospy.get_param('~default_vx_max', value)
-        self._widget.max_x_linear_double_spin_box.setValue(float(value))
-
-        value = self._widget.min_x_linear_double_spin_box.value()
-        value = instance_settings.value('vx_min', value)
-        value = rospy.get_param('~default_vx_min', value)
-        self._widget.min_x_linear_double_spin_box.setValue(float(value))
-
-        value = self._widget.max_z_angular_double_spin_box.value()
-        value = instance_settings.value('vw_max', value)
-        value = rospy.get_param('~default_vw_max', value)
-        self._widget.max_z_angular_double_spin_box.setValue(float(value))
-
-        value = self._widget.min_z_angular_double_spin_box.value()
-        value = instance_settings.value('vw_min', value)
-        value = rospy.get_param('~default_vw_min', value)
-        self._widget.min_z_angular_double_spin_box.setValue(float(value))
